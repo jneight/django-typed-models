@@ -186,7 +186,14 @@ class TypedModelMetaclass(ModelBase):
             def _fill_fields_cache(self):
                 cache = []
                 for parent in self.parents:
-                    for field, model in parent._meta.get_fields_with_model():
+                    fields_with_model = (
+                        (f, f.model if f.model != parent else None)
+                        for f in parent._meta.fields
+                            if not f.is_relation
+                                or f.one_to_one
+                                or f.many_to_one
+                    )
+                    for field, model in fields_with_model:
                         if field in base_class._meta.original._meta.fields or any(field in ancestor._meta.declared_fields.values() for ancestor in cls.mro() if issubclass(ancestor, base_class) and not ancestor==base_class):
                             if model:
                                 cache.append((field, model))
